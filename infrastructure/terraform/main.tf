@@ -40,7 +40,7 @@ resource "upcloud_server" "md-dagster" {
   }
 
   network_interface {
-    type = "private"
+    type    = "private"
     network = upcloud_network.md-network.id
   }
 
