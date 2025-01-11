@@ -1,11 +1,11 @@
 name: 'Terraform Deploy'
 on: 
-  push:
+  - push:
     branches:
       - main
     paths:
-    - infrastructure/terraform/**
-  workflow_dispatch
+      - infrastructure/terraform/**
+  - workflow_dispatch:
 
 jobs:
   terraform:
