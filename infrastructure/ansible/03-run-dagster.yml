@@ -1,0 +1,31 @@
+---
+- name: Run Dagster in docker compose
+  hosts: md-dagster
+  vars_files:
+    - ../terraform/ansible_vars_file.yml
+  environment:
+    - BASIC_AUTH_USERNAME: "{{ lookup('env', 'BASIC_AUTH_USERNAME', default='dagster') }}"
+    - BASIC_AUTH_PASSWORD: "{{ lookup('env', 'BASIC_AUTH_PASSWORD', default='dagster') }}"
+    - AWS_ACCESS_KEY_ID: "{{ object_storage_key_id }}"
+    - AWS_SECRET_ACCESS_KEY: "{{ object_storage_secret_access_key }}"
+    - POSTGRES_PASSWORD: "{{ lookup('env', 'POSTGRES_PASSWORD', default='dagster') }}"
+    - DAGSTER_NETWORK: "dagster_dagster-network"
+    - OBJECT_STORAGE_PRIVATE_ENDPOINT: "{{ object_storage_private_endpoint }}"
+  tasks:
+    # - name: Tear down existing dagster container
+    #   community.docker.docker_compose_v2:
+    #     project_src: ~/dagster
+    #     state: absent
+    #   register: dagster_compose_result
+    # - name: Debug teardown result
+    #   debug:
+    #     var: dagster_compose_result
+    - name: Run dagster
+      community.docker.docker_compose_v2:
+        project_src: ~/dagster
+        build: always
+        state: present
+      register: dagster_compose_result
+    - name: Debug run result
+      debug:
+        var: dagster_compose_result

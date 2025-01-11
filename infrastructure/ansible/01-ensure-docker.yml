@@ -1,0 +1,57 @@
+---
+- name: Install docker
+  hosts: md-dagster
+  vars_files:
+    - ../terraform/ansible_vars_file.yml
+  become: true
+  tasks:
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+    - name: Add dagster user to docker group
+      user:
+        name: dagster
+        groups: docker
+        append: true
+      register: docker_group_add_result
+    - name: Debug docker group add result
+      debug:
+        var: docker_group_add_result
+    - name: Install docker
+      community.general.snap:
+        name: docker
+        classic: true
+        state: present
+      register: docker_install_result
+    - name: Debug docker install result
+      debug:
+        var: docker_install_result
+    - name: Snap connect docker
+      shell:
+        cmd: snap connect docker:home
+      register: docker_connect_result
+    - name: Debug docker connect result
+      debug:
+        var: docker_connect_result
+    # setfacl --modify user:<user name or ID>:rw /var/run/docker.sock
+    - name: Ensure setfacl is installed
+      apt:
+        name: acl
+        state: present
+      register: acl_install_result
+    - name: Debug acl install result
+      debug:
+        var: acl_install_result
+    - name: Ensure setfacl for docker
+      ansible.posix.acl:
+        path: /var/run/docker.sock
+        entity: dagster
+        etype: user
+        permissions: rw
+        state: present
+      register: docker_acl_result
+    - name: Debug docker acl result
+      debug:
+        var: docker_acl_result
+

@@ -1,0 +1,7 @@
+all:
+  hosts:
+    md-dagster:
+      ansible_host: "{{ dagster_ip }}"
+      ansible_port: 22
+      ansible_user: dagster
+      ansible_ssh_private_key_file: ../.ssh/id_ed25519

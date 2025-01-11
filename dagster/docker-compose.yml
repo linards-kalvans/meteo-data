@@ -1,0 +1,148 @@
+
+services:
+  dagster-metadata:
+    image: postgres:17
+    container_name: dagster-metadata
+    environment:
+      - POSTGRES_PASSWORD=${DAGSTER_DB_PASSWORD:-dagster}
+      - POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
+      - POSTGRES_DB=${DAGSTER_DB_NAME:-dagster}
+    ports:
+      - 5432:5432
+    networks:
+      - dagster-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DAGSTER_DB_USER:-dagster}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - dagster-metadata-data:/var/lib/postgresql/data
+
+  dagster-user-code:
+    build:
+      context: .
+      dockerfile: dockerfiles/dagster.dockerfile
+    container_name: dagster-user-code
+    image: dagster-user-code
+    # restart: unless-stopped
+    environment:
+      - DAGSTER_POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
+      - DAGSTER_POSTGRES_PASSWORD=${DAGSTER_DB_PASSWORD:-dagster}
+      - DAGSTER_POSTGRES_DB=${DAGSTER_DB_NAME:-dagster}
+      - DAGSTER_CURRENT_IMAGE=dagster-user-code
+      - OBJECT_STORAGE_PRIVATE_ENDPOINT=${OBJECT_STORAGE_PRIVATE_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    ports:
+      - 4000:4000
+    entrypoint:
+      - uv
+      - run
+      - dagster
+      - api
+      - grpc
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "4000"
+      - -m
+      - pipeline.definitions
+    # entrypoint:
+    #   - tail
+    #   - -f
+    #   - /dev/null
+    networks:
+      - dagster-network
+
+  dagster-webserver:
+    build:
+      context: .
+      dockerfile: dockerfiles/dagster.dockerfile
+    container_name: dagster-webserver
+    restart: unless-stopped
+    networks:
+      - dagster-network
+    entrypoint:
+      - uv
+      - run
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    ports:
+      - 3000:3000
+    environment:
+      - DAGSTER_HOME=/opt/dagster/dagster_home/
+      - DAGSTER_POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
+      - DAGSTER_POSTGRES_PASSWORD=${DAGSTER_DB_PASSWORD:-dagster}
+      - DAGSTER_POSTGRES_DB=${DAGSTER_DB_NAME:-dagster}
+    volumes: # Make docker client accessible so we can terminate containers from the webserver
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    depends_on:
+      dagster-metadata:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_started
+
+  nginx:
+    build:
+      context: dockerfiles
+      dockerfile: nginx-basic-auth.dockerfile
+    container_name: nginx
+    ports:
+      - 80:80
+    depends_on:
+      dagster-webserver:
+        condition: service_started
+    environment:
+      - FORWARD_HOST=dagster-webserver
+      - FORWARD_PORT=3000
+      - BASIC_USERNAME=${BASIC_AUTH_USERNAME}
+      - BASIC_PASSWORD=${BASIC_AUTH_PASSWORD}
+    networks:
+      - dagster-network
+    restart: unless-stopped
+
+  dagster-daemon:
+    build:
+      context: .
+      dockerfile: dockerfiles/dagster.dockerfile
+    container_name: dagster-daemon
+    # restart: on-failure
+    networks:
+      - dagster-network
+    entrypoint:
+      - uv
+      - run
+      - dagster-daemon
+      - run
+    environment:
+      - DAGSTER_POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
+      - DAGSTER_POSTGRES_PASSWORD=${DAGSTER_DB_PASSWORD:-dagster}
+      - DAGSTER_POSTGRES_DB=${DAGSTER_DB_NAME:-dagster}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - OBJECT_STORAGE_PRIVATE_ENDPOINT=${OBJECT_STORAGE_PRIVATE_ENDPOINT}
+      - DAGSTER_NETWORK=${DAGSTER_NETWORK}
+    volumes: # Make docker client accessible so we can launch containers using host docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    depends_on:
+      dagster-metadata:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_started
+
+volumes:
+  dagster-metadata-data:
+
+networks:
+  dagster-network:
+    driver: bridge

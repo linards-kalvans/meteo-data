@@ -1,0 +1,37 @@
+---
+- name: Copy dagster directory
+  hosts: md-dagster
+  vars_files:
+    - ../terraform/ansible_vars_file.yml
+  environment:
+    - BASIC_AUTH_USERNAME: "{{ lookup('env', 'BASIC_AUTH_USERNAME', default='dagster') }}"
+    - BASIC_AUTH_PASSWORD: "{{ lookup('env', 'BASIC_AUTH_PASSWORD', default='dagster') }}"
+    - AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID', default='access_key') }}"
+    - AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY', default='secret_key') }}"
+    - POSTGRES_PASSWORD: "{{ lookup('env', 'POSTGRES_PASSWORD', default='dagster') }}"
+  tasks:
+    - name: Compress local dagster directory
+      archive:
+        path: ../../dagster
+        format: gz
+        dest: dagster.gz
+        exclusion_patterns:
+          - .venv
+      delegate_to: localhost
+      run_once: true
+    - name: Copy dagster.gz to remote host
+      copy:
+        src: dagster.gz
+        dest: ~/dagster.gz
+        owner: dagster
+        group: dagster
+        mode: '0755'
+    - name: Extract dagster on remote host
+      unarchive:
+        src: dagster.gz
+        dest: ~/
+        remote_src: true
+      register: dagster_extract_result
+    - name: Debug extract result
+      debug:
+        var: dagster_extract_result
