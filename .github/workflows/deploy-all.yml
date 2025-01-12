@@ -1,0 +1,9 @@
+name: 'Deploy All'
+on:
+  workflow_call
+
+jobs:
+  terraform:
+    uses: ./.github/workflows/01-deploy-infrastructure.yml
+  docker:
+    uses: ./.github/workflows/02-deploy-docker.yml
