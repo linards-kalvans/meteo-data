@@ -210,3 +210,13 @@ terraform.rc
 
 # Ansible
 *.retry
+
+*_vars_file.yml
+
+# Ansible
+*.retry
+
+# Dagster
+*.gz
+*.tar.gz
+*.sqlite*
