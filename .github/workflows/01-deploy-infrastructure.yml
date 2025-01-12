@@ -14,8 +14,8 @@ env:
   UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
 
 jobs:
-  terraform:
-    name: 'Terraform'
+  terraform-ansible:
+    name: 'Terraform / Ansible'
     runs-on: ubuntu-latest
 
     steps:

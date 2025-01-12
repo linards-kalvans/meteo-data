@@ -6,3 +6,8 @@ jobs:
   terraform:
     uses: ./.github/workflows/01-deploy-infrastructure.yml
     secrets: inherit
+
+  dagster:
+    needs: terraform
+    uses: ./.github/workflows/02-run-dagster.yml
+    secrets: inherit
