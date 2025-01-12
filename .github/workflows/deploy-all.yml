@@ -5,14 +5,9 @@ on:
 jobs:
   terraform:
     uses: ./.github/workflows/01-deploy-infrastructure.yml
-    secrets:
-      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
-      UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
-      UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
+    secrets: inherit
 
   docker:
     needs: terraform
     uses: ./.github/workflows/02-deploy-docker.yml
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+    secrets: inherit
