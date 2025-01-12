@@ -6,4 +6,5 @@ jobs:
   terraform:
     uses: ./.github/workflows/01-deploy-infrastructure.yml
   docker:
+    needs: terraform
     uses: ./.github/workflows/02-deploy-docker.yml
