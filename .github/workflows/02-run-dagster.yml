@@ -30,6 +30,10 @@ jobs:
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: infrastructure/terraform
+
       - name: 'Terraform Ansible vars'
         run: |
           terraform apply -auto-approve -target=local_file.tf_ansible_vars_file_new
