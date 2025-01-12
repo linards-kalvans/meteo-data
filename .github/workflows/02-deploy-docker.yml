@@ -20,6 +20,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible
+
+      - name: 'Terraform Setup'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: infrastructure/terraform
+      
+      - name: 'Terraform generate vars'
+        run: terraform apply -auto-approve -target=local_file.tf_ansible_vars_file_new
+        working-directory: infrastructure/terraform
+
       - name: Run Ansible
         run: |
           ansible-playbook 01-ensure-docker.yml
