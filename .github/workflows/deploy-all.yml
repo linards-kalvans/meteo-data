@@ -1,6 +1,6 @@
 name: 'Deploy All'
 on:
-  workflow_call
+  workflow_dispatch
 
 jobs:
   terraform:
