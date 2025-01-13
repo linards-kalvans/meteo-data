@@ -6,7 +6,7 @@ jobs:
   terraform:
     uses: ./.github/workflows/01-deploy-infrastructure.yml
     secrets: inherit
-    inputs:
+    with:
       run_terraform: true
       run_ansible: true
 
