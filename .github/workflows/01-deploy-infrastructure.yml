@@ -7,7 +7,14 @@ name: 'Terraform / Ansible Deploy'
 #       - infrastructure/terraform/**
 #   workflow_dispatch:
 on:
-  workflow_call
+  workflow_call:
+    inputs:
+      run_ansible:
+        type: boolean
+        default: false
+      run_terraform:
+        type: boolean
+        default: false
 
 env:
   UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
@@ -34,11 +41,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible
+        if: "${{ inputs.run_ansible }}"
 
       - name: 'Terraform Setup'
         uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_wrapper: false
 
       - name: 'Terraform Init'
         run: terraform init
@@ -47,16 +56,37 @@ jobs:
       - name: 'Terraform Format'
         run: terraform fmt -check
         working-directory: infrastructure/terraform
+        if: "${{ inputs.run_terraform }}"
 
       - name: 'Terraform Plan'
         run: terraform plan
         working-directory: infrastructure/terraform
+        if: "${{ inputs.run_terraform }}"
 
       - name: 'Terraform Apply'
         run: terraform apply -auto-approve
         working-directory: infrastructure/terraform
+        if: "${{ inputs.run_terraform }}"
+      
+      - name: Terraform Output
+        run: terraform apply -auto-approve -target=local_file.tf_ansible_vars_file_new
+        working-directory: infrastructure/terraform
+        if: "${{ !inputs.run_terraform }}"
+
+      - name: Encrypt Ansible Variables
+        run: |
+          openssl rsautl -encrypt -oaep -pubin -inkey <(ssh-keygen -e -f ./infrastructure/.ssh/id_ed25519.pub -m PKCS8) -in ./ansible_vars_file.yml -out ./ansible_vars_file.yml.enc
+        working-directory: infrastructure/terraform
+      
+      - name: Upload Ansible Variables
+        uses: actions/upload-artifact@v3
+        with:
+          name: ansible_vars_file.yml.enc
+          path: ./infrastructure/terraform/ansible_vars_file.yml.enc
 
       - name: Run Ansible
         run: |
           ansible-playbook 01-ensure-docker.yml
         working-directory: infrastructure/ansible
+        if: "${{ inputs.run_ansible }}"
+       
