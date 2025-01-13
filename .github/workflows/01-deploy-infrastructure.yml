@@ -36,10 +36,10 @@ jobs:
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ./infrastructure/.ssh/id_ed25519.pub
           chmod 600 ./infrastructure/.ssh/id_ed25519
           chmod 644 ./infrastructure/.ssh/id_ed25519.pub
-          echo "${{ secrets.SSH_PUBLIC_KEY_RSA }}" > ./infrastructure/.ssh/id_rsa.pub
-          echo "${{ secrets.SSH_PRIVATE_KEY_RSA }}" > ./infrastructure/.ssh/id_rsa
-          chmod 644 ./infrastructure/.ssh/id_rsa.pub
-          chmod 600 ./infrastructure/.ssh/id_rsa
+          echo "${{ secrets.OPENSSL_PUBLIC_KEY }}" > ./infrastructure/.ssh/enckey_pub.pem
+          echo "${{ secrets.OPENSSL_PRIVATE_KEY }}" > ./infrastructure/.ssh/enckey_priv.pem
+          chmod 644 ./infrastructure/.ssh/enckey_pub.pem
+          chmod 600 ./infrastructure/.ssh/enckey_priv.pem
 
       # - name: Install Ansible
       #   run: |
@@ -79,7 +79,7 @@ jobs:
 
       - name: Encrypt Ansible Variables
         run: |
-          openssl pkeyutl -encrypt -pubin -inkey <(ssh-keygen -e -f ../.ssh/id_rsa.pub -m PKCS8) -in ./ansible_vars_file.yml -out ./ansible_vars_file.yml.enc
+          openssl pkeyutl -encrypt -inkey ../.ssh/enckey_pub.pem -in ./ansible_vars_file.yml -out ./ansible_vars_file.yml.enc
         working-directory: infrastructure/terraform
       
       - name: Upload Ansible Variables
