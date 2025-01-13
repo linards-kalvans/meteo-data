@@ -37,11 +37,11 @@ jobs:
           chmod 600 ./infrastructure/.ssh/id_ed25519
           chmod 644 ./infrastructure/.ssh/id_ed25519.pub
 
-      - name: Install Ansible
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible
-        if: "${{ inputs.run_ansible }}"
+      # - name: Install Ansible
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y ansible
+      #   if: "${{ inputs.run_ansible }}"
 
       - name: 'Terraform Setup'
         uses: hashicorp/setup-terraform@v3
@@ -75,7 +75,7 @@ jobs:
 
       - name: Encrypt Ansible Variables
         run: |
-          openssl rsautl -encrypt -oaep -pubin -inkey <(ssh-keygen -e -f ./infrastructure/.ssh/id_ed25519.pub -m PKCS8) -in ./ansible_vars_file.yml -out ./ansible_vars_file.yml.enc
+          openssl rsautl -encrypt -oaep -pubin -inkey <(ssh-keygen -e -f ../.ssh/id_ed25519.pub -m PKCS8) -in ./ansible_vars_file.yml -out ./ansible_vars_file.yml.enc
         working-directory: infrastructure/terraform
       
       - name: Upload Ansible Variables
