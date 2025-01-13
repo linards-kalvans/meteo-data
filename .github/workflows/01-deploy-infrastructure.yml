@@ -79,8 +79,7 @@ jobs:
 
       - name: Encrypt Ansible Variables
         run: |
-          openssl pkeyutl -encrypt -inkey ../.ssh/enckey_pub.pem -in ./ansible_vars_file.yml -out ./ansible_vars_file.yml.enc
-        working-directory: infrastructure/terraform
+          openssl pkeyutl -encrypt -inkey ./infrastructure/.ssh/enckey_pub.pem -in ./infrastructure/terraform/ansible_vars_file.yml -out ./infrastructure/terraform/ansible_vars_file.yml.enc
       
       - name: Upload Ansible Variables
         uses: actions/upload-artifact@v3
