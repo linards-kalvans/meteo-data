@@ -3,6 +3,10 @@ name: Run Dagster
 on:
   workflow_call
 
+env:
+  UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
+  UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
+
 jobs:
   dagster:
     name: Run Dagster w docker-compose
