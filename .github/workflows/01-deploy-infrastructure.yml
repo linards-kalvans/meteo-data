@@ -36,10 +36,6 @@ jobs:
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ./infrastructure/.ssh/id_ed25519.pub
           chmod 600 ./infrastructure/.ssh/id_ed25519
           chmod 644 ./infrastructure/.ssh/id_ed25519.pub
-          echo "${{ secrets.OPENSSL_PUBLIC_KEY }}" > ./infrastructure/.ssh/enckey_pub.pem
-          echo "${{ secrets.OPENSSL_PRIVATE_KEY }}" > ./infrastructure/.ssh/enckey_priv.pem
-          chmod 644 ./infrastructure/.ssh/enckey_pub.pem
-          chmod 600 ./infrastructure/.ssh/enckey_priv.pem
 
       # - name: Install Ansible
       #   run: |
@@ -73,19 +69,15 @@ jobs:
         if: "${{ inputs.run_terraform }}"
       
       - name: Terraform Output
-        run: terraform apply -auto-approve -target=local_file.tf_ansible_vars_file_new
-        working-directory: infrastructure/terraform
-        if: "${{ !inputs.run_terraform }}"
-
-      - name: Encrypt Ansible Variables
         run: |
-          openssl pkeyutl -encrypt -inkey ./infrastructure/.ssh/enckey_pub.pem -pubin -in ./infrastructure/terraform/ansible_vars_file.yml -out ./infrastructure/terraform/ansible_vars_file.yml.enc
-      
-      - name: Upload Ansible Variables
-        uses: actions/upload-artifact@v3
-        with:
-          name: ansible_vars_file.yml.enc
-          path: ./infrastructure/terraform/ansible_vars_file.yml.enc
+          echo "DAGSTER_PRIVATE_IP=$(terraform output -raw dagster_private_ip)" > "$GITHUB_OUTPUT"
+          echo "DAGSTER_PUBLIC_IP=$(terraform output -raw dagster_public_ip)" >> "$GITHUB_OUTPUT"
+          echo "OBJECT_STORAGE_ENDPOINT=https://$(terraform output -raw object_storage_endpoint[0].domain_name)" >> "$GITHUB_OUTPUT"
+          echo "OBJECT_STORAGE_KEY_ID=$(terraform output -raw object_storage_key_id)" >> "$GITHUB_OUTPUT"
+          OBJECT_STORAGE_SECRET_ACCESS_KEY=$(terraform output -raw object_storage_secret_access_key)
+          echo "::add-mask::$OBJECT_STORAGE_SECRET_ACCESS_KEY"
+          echo "OBJECT_STORAGE_SECRET_ACCESS_KEY=$OBJECT_STORAGE_SECRET_ACCESS_KEY" >> "$GITHUB_OUTPUT"
+        working-directory: infrastructure/terraform
 
       - name: Run Ansible
         run: |
