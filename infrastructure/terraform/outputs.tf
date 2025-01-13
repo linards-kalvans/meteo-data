@@ -10,6 +10,14 @@ output "object_storage_endpoint" {
   value = upcloud_managed_object_storage.md-object-storage.endpoint
 }
 
+output "object_storage_private_endpoint_domain_name" {
+  value = tolist(upcloud_managed_object_storage.md-object-storage.endpoint)[0].domain_name
+}
+
+output "object_storage_public_endpoint_domain_name" {
+  value = tolist(upcloud_managed_object_storage.md-object-storage.endpoint)[1].domain_name
+}
+
 output "object_storage_key_id" {
   value = upcloud_managed_object_storage_user_access_key.md-raw-data.access_key_id
 }
