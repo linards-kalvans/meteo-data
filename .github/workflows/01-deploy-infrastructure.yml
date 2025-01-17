@@ -74,7 +74,6 @@ jobs:
           echo "DAGSTER_PUBLIC_IP=$(terraform output -raw dagster_public_ip)" >> "$GITHUB_OUTPUT"
           echo "OBJECT_STORAGE_ENDPOINT=https://$(terraform output -raw object_storage_private_endpoint_domain_name)" >> "$GITHUB_OUTPUT"
           echo "OBJECT_STORAGE_KEY_ID=$(terraform output -raw object_storage_key_id)" >> "$GITHUB_OUTPUT"
-          OBJECT_STORAGE_SECRET_ACCESS_KEY=$(terraform output -raw object_storage_secret_access_key)
           echo "OBJECT_STORAGE_SECRET_ACCESS_KEY=$(terraform output -raw object_storage_secret_access_key)" >> "$GITHUB_OUTPUT"
         working-directory: infrastructure/terraform
 

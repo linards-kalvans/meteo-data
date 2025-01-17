@@ -19,7 +19,7 @@ storage_options = {
 
 md_raw_data_schedule = ScheduleDefinition(
     name="md_raw_data_schedule",
-    cron_schedule="0 */4 * * *",
+    cron_schedule="0 */12 * * *",
     target=all_assets,
     default_status=DefaultScheduleStatus.RUNNING
 )
