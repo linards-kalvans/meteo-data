@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime
 import csv
 import os
+from dagster_duckdb import DuckDBResource
 
 from .api_wrapper import Forecast
 
@@ -42,5 +43,27 @@ def forecast_lv_grid(raw_lv_grid: tuple[pl.DataFrame, pl.DataFrame]) -> pl.DataF
 def current_weather_lv_grid(raw_lv_grid: tuple[pl.DataFrame, pl.DataFrame]) -> pl.DataFrame:
     return raw_lv_grid[1]
 
+@dagster.asset
+def duckdb_secrets(duckdb: DuckDBResource) -> None:
+    with duckdb.get_connection() as conn:
+        conn.sql(
+            f"""
+            CREATE SECRET secret1 (
+                TYPE S3,
+                KEY_ID '{os.getenv('AWS_ACCESS_KEY_ID')}',
+                SECRET '{os.getenv('AWS_SECRET_ACCESS_KEY')}',
+                ENDPOINT '{os.getenv('OBJECT_STORAGE_PRIVATE_ENDPOINT').replace('https://', '')}'
+            )
+            """
+        )
 
-
+@dagster.asset(
+    deps=[duckdb_secrets]
+)
+def last_transform_date(duckdb: DuckDBResource) -> datetime:
+    with duckdb.get_connection() as conn:
+        try:
+            return conn.sql("SELECT CAST(MAX(date) AS DATE) AS last_transform_date FROM 's3://processed-data/processed_data*.parquet'").fetchone()[0]
+        except Exception as e:
+            logger.warning(f"Error getting last transform date: {e}")
+            return datetime(2024, 1, 1) # If no data return date well in the past

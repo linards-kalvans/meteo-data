@@ -5,7 +5,8 @@ from dagster import (
     DefaultScheduleStatus
 )
 from dagster_polars import PolarsParquetIOManager
-from pathlib import Path
+from dagster_duckdb import DuckDBResource
+# from pathlib import Path
 from . import assets
 import os
 
@@ -30,6 +31,9 @@ defs = Definitions(
         "polars_io_manager": PolarsParquetIOManager(
             base_dir=polars_base_dir,
             storage_options=storage_options
+        ),
+        "duckdb": DuckDBResource(
+            database=":memory:" # memory
         )
     },
     schedules=[md_raw_data_schedule],
