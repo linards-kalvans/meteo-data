@@ -6,11 +6,11 @@ from dagster import (
 )
 from dagster_polars import PolarsParquetIOManager
 from dagster_duckdb import DuckDBResource
-# from pathlib import Path
-from . import assets
+import tempfile
+from pathlib import Path
+from . import raw_data_assets
+from . import processed_data_assets
 import os
-
-all_assets = load_assets_from_modules([assets])
 
 # polars_base_dir = (Path(__file__).parent.parent / "data").as_posix()
 polars_base_dir = "s3://md-raw-data"
@@ -18,23 +18,38 @@ storage_options = {
     "endpoint_url": os.getenv("OBJECT_STORAGE_PRIVATE_ENDPOINT"),
 }
 
+raw_data_assets = load_assets_from_modules([raw_data_assets])
+
+processed_data_assets = load_assets_from_modules([processed_data_assets])
+
 md_raw_data_schedule = ScheduleDefinition(
     name="md_raw_data_schedule",
     cron_schedule="0 */12 * * *",
-    target=all_assets,
+    target=raw_data_assets,
+    default_status=DefaultScheduleStatus.RUNNING
+)
+
+md_processed_data_schedule = ScheduleDefinition(
+    name="md_processed_data_schedule",
+    cron_schedule="0 2 * * *",
+    target=processed_data_assets,
     default_status=DefaultScheduleStatus.RUNNING
 )
 
 defs = Definitions(
-    assets=all_assets,
+    assets=raw_data_assets + processed_data_assets,
     resources={
         "polars_io_manager": PolarsParquetIOManager(
             base_dir=polars_base_dir,
             storage_options=storage_options
         ),
+        "polars_io_manager_transformed": PolarsParquetIOManager(
+            base_dir="s3://processed-data",
+            storage_options=storage_options
+        ),
         "duckdb": DuckDBResource(
-            database=":memory:" # memory
+            database=str(Path(tempfile.gettempdir()) / "duckdb.db")
         )
     },
-    schedules=[md_raw_data_schedule],
+    schedules=[md_raw_data_schedule, md_processed_data_schedule],
 )
