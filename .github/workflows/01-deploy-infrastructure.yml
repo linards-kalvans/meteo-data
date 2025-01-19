@@ -15,11 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name Condition infrastructure changed
+      - name: Condition infrastructure changed
         uses: dorny/paths-filter@v3
         id: changes
         with:
-          base: ${{ github.ref }}
           filters: |
             terraform:
               - 'infrastructure/terraform/**'
