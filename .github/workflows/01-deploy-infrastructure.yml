@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+
       - name: Condition infrastructure changed
         uses: dorny/paths-filter@v3
         id: changes
@@ -24,10 +27,6 @@ jobs:
             ansible:
               - 'infrastructure/ansible/**'
             
-            
-      - name: 'Checkout'
-        uses: actions/checkout@v2
-
       - name: Set up SSH
         if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: |
