@@ -1,9 +1,6 @@
 name: 'Terraform / Ansible Deploy'
 on: 
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_call
 
 env:
   UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
@@ -30,7 +27,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up SSH
-        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: |
           mkdir -p ./infrastructure/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ./infrastructure/.ssh/id_ed25519
@@ -45,34 +42,34 @@ jobs:
       #   if: "${{ inputs.run_ansible }}"
 
       - name: 'Terraform Setup'
-        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
 
       - name: 'Terraform Init'
-        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: terraform init
         working-directory: infrastructure/terraform
       
       - name: 'Terraform Format'
-        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: terraform fmt -check
         working-directory: infrastructure/terraform
 
       - name: 'Terraform Plan'
-        if: steps.changes.outputs.terraform == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: terraform plan
         working-directory: infrastructure/terraform
 
       - name: 'Terraform Apply'
-        if: steps.changes.outputs.terraform == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: terraform apply -auto-approve
         working-directory: infrastructure/terraform
       
       - name: Terraform Output
-        if: steps.changes.outputs.ansible == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.ansible == 'true'
         run: |
           echo "DAGSTER_PRIVATE_IP=$(terraform output -raw dagster_private_ip)" > "$GITHUB_OUTPUT"
           echo "DAGSTER_PUBLIC_IP=$(terraform output -raw dagster_public_ip)" >> "$GITHUB_OUTPUT"
@@ -82,7 +79,7 @@ jobs:
         working-directory: infrastructure/terraform
 
       - name: Run Ansible
-        if: steps.changes.outputs.ansible == 'true' || steps.changes.outputs.terraform == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.ansible == 'true' || steps.changes.outputs.terraform == 'true'
         run: |
           ansible-playbook 01-ensure-docker.yml
         working-directory: infrastructure/ansible
