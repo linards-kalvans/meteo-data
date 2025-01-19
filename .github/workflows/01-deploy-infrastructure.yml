@@ -1,20 +1,9 @@
 name: 'Terraform / Ansible Deploy'
-# on: 
-#   push:
-#     branches:
-#       - main
-#     paths:
-#       - infrastructure/terraform/**
-#   workflow_dispatch:
-on:
-  workflow_call:
-    inputs:
-      run_ansible:
-        type: boolean
-        default: false
-      run_terraform:
-        type: boolean
-        default: false
+on: 
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 env:
   UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
@@ -26,10 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name Condition infrastructure changed
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            terraform:
+              - 'infrastructure/terraform/**'
+            ansible:
+              - 'infrastructure/ansible/**'
+            
+            
       - name: 'Checkout'
         uses: actions/checkout@v2
 
       - name: Set up SSH
+        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: |
           mkdir -p ./infrastructure/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ./infrastructure/.ssh/id_ed25519
@@ -44,31 +45,34 @@ jobs:
       #   if: "${{ inputs.run_ansible }}"
 
       - name: 'Terraform Setup'
+        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
 
       - name: 'Terraform Init'
+        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: terraform init
         working-directory: infrastructure/terraform
       
       - name: 'Terraform Format'
+        if: steps.changes.outputs.terraform == 'true' || steps.changes.outputs.ansible == 'true'
         run: terraform fmt -check
         working-directory: infrastructure/terraform
-        if: "${{ inputs.run_terraform }}"
 
       - name: 'Terraform Plan'
+        if: steps.changes.outputs.terraform == 'true'
         run: terraform plan
         working-directory: infrastructure/terraform
-        if: "${{ inputs.run_terraform }}"
 
       - name: 'Terraform Apply'
+        if: steps.changes.outputs.terraform == 'true'
         run: terraform apply -auto-approve
         working-directory: infrastructure/terraform
-        if: "${{ inputs.run_terraform }}"
       
       - name: Terraform Output
+        if: steps.changes.outputs.ansible == 'true'
         run: |
           echo "DAGSTER_PRIVATE_IP=$(terraform output -raw dagster_private_ip)" > "$GITHUB_OUTPUT"
           echo "DAGSTER_PUBLIC_IP=$(terraform output -raw dagster_public_ip)" >> "$GITHUB_OUTPUT"
@@ -78,8 +82,9 @@ jobs:
         working-directory: infrastructure/terraform
 
       - name: Run Ansible
+        if: steps.changes.outputs.ansible == 'true' || steps.changes.outputs.terraform == 'true'
         run: |
           ansible-playbook 01-ensure-docker.yml
         working-directory: infrastructure/ansible
-        if: "${{ inputs.run_ansible }}"
+
        

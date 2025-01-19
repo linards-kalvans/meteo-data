@@ -1,14 +1,17 @@
 name: 'Deploy All'
 on:
   workflow_dispatch
+  push:
+    branches:
+      - main
+    paths:
+      - dagster/**
+      - infrastructure/**
 
 jobs:
   terraform:
     uses: ./.github/workflows/01-deploy-infrastructure.yml
     secrets: inherit
-    with:
-      run_terraform: true
-      run_ansible: true
 
   dagster:
     needs: terraform

@@ -31,7 +31,10 @@ def duckdb_secrets(duckdb: DuckDBResource) -> None:
 def last_transform_date(duckdb: DuckDBResource) -> datetime:
     with duckdb.get_connection() as conn:
         try:
-            return conn.sql("SELECT CAST(MAX(date) AS DATE) AS last_transform_date FROM 's3://processed-data/*/processed_weather_data.parquet'").fetchone()[0]
+            return datetime.combine(
+                conn.sql("SELECT CAST(MAX(date) AS DATE) AS last_transform_date FROM 's3://processed-data/*/processed_weather_data.parquet'").fetchone()[0],
+                datetime.min.time()
+            )
         except Exception as e:
             logger.warning(f"Error getting last transform date: {e}")
             return datetime(2024, 1, 1) # If no data return date well in the past
