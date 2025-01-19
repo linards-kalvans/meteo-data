@@ -15,6 +15,7 @@ jobs:
       - name: Condition infrastructure changed
         uses: dorny/paths-filter@v3
         id: changes
+        if: github.event_name != 'workflow_dispatch'
         with:
           base: ${{ github.ref }}
           filters: |
