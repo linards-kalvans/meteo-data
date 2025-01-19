@@ -31,10 +31,6 @@ resource "upcloud_managed_object_storage_bucket" "processed-data" {
   name         = "processed-data"
 }
 
-data "upcloud_managed_object_storage_policies" "md-raw-data" {
-  service_uuid = upcloud_managed_object_storage.md-object-storage.id
-}
-
 resource "upcloud_managed_object_storage_user" "md-raw-data" {
   username     = "md-raw-data"
   service_uuid = upcloud_managed_object_storage.md-object-storage.id
