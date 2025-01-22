@@ -26,6 +26,7 @@ def duckdb_secrets(duckdb: DuckDBResource) -> None:
         )
 
 @dagster.asset(
+    group_name="processed_data",
     deps=[duckdb_secrets],
     metadata={"description": "Get last transform date from processed data"},
 )
