@@ -7,6 +7,7 @@ from dagster_duckdb import DuckDBResource
 logger = dagster.get_dagster_logger()
 
 @dagster.asset(
+    group_name="processed_data",
     metadata={"description": "Create S3 secrets in duckdb"},
 )
 def duckdb_secrets(duckdb: DuckDBResource) -> None:
@@ -40,6 +41,8 @@ def last_transform_date(duckdb: DuckDBResource) -> datetime:
             return datetime(2024, 1, 1) # If no data return date well in the past
 
 @dagster.asset(
+    group_name="processed_data",
+    deps=[duckdb_secrets],
     metadata={"description": "Get weather data for the LV grid from S3"},
 )
 def weather_data_lv_grid(last_transform_date: datetime, duckdb: DuckDBResource) -> None:
@@ -61,6 +64,7 @@ def weather_data_lv_grid(last_transform_date: datetime, duckdb: DuckDBResource) 
 
 @dagster.asset(
     deps=[weather_data_lv_grid],
+    group_name="processed_data",
     metadata={"description": "Transform weather data for the LV grid"},
     io_manager_key="polars_io_manager_transformed",
     key_prefix=f"{datetime.now().year}_{datetime.now().month}_{datetime.now().day}",

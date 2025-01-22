@@ -18,7 +18,7 @@ class MDConfig(dagster.Config):
 # Initialize forecast object globally to reuse cache on multiple assets
 forecast = Forecast()
 
-@dagster.asset
+@dagster.asset(group_name="raw_data")
 def raw_lv_grid(config: MDConfig) -> tuple[pl.DataFrame, pl.DataFrame]:
     all_data = [forecast.get_data(row["latitude"], row["longitude"]) for row in config.grid]
     forecast_data = pl.concat([data[0] for data in all_data])
@@ -26,6 +26,7 @@ def raw_lv_grid(config: MDConfig) -> tuple[pl.DataFrame, pl.DataFrame]:
     return forecast_data, current_data
 
 @dagster.asset(
+    group_name="raw_data",
     io_manager_key="polars_io_manager",
     key_prefix=f"{datetime.now().year}_{datetime.now().month}_{datetime.now().day}_{datetime.now().hour}",
     metadata={"description": "Get forecast weather data for the LV grid"},
@@ -34,9 +35,11 @@ def forecast_lv_grid(raw_lv_grid: tuple[pl.DataFrame, pl.DataFrame]) -> pl.DataF
     return raw_lv_grid[0]
 
 @dagster.asset(
+    group_name="raw_data",
     io_manager_key="polars_io_manager",
     key_prefix=f"{datetime.now().year}_{datetime.now().month}_{datetime.now().day}_{datetime.now().hour}",
     metadata={"description": "Get current weather data for the LV grid"},
 )
 def current_weather_lv_grid(raw_lv_grid: tuple[pl.DataFrame, pl.DataFrame]) -> pl.DataFrame:
     return raw_lv_grid[1]
+
