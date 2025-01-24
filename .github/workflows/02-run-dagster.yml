@@ -6,6 +6,7 @@ on:
 env:
   UPCLOUD_USERNAME: ${{ secrets.UPCLOUD_USERNAME }}
   UPCLOUD_PASSWORD: ${{ secrets.UPCLOUD_PASSWORD }}
+  BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD }}
 
 jobs:
   dagster:
