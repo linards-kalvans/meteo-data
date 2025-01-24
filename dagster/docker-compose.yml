@@ -6,8 +6,8 @@ services:
       - POSTGRES_PASSWORD=${DAGSTER_DB_PASSWORD:-dagster}
       - POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
       - POSTGRES_DB=${DAGSTER_DB_NAME:-dagster}
-    ports:
-      - 5432:5432
+    # ports:
+    #   - 5432:5432
     networks:
       - dagster-network
     healthcheck:

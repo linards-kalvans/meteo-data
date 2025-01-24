@@ -21,8 +21,8 @@ forecast = Forecast()
 @dagster.asset(group_name="raw_data")
 def raw_lv_grid(config: MDConfig) -> tuple[pl.DataFrame, pl.DataFrame]:
     all_data = [forecast.get_data(row["latitude"], row["longitude"]) for row in config.grid]
-    forecast_data = pl.concat([data[0] for data in all_data])
-    current_data = pl.concat([data[1] for data in all_data])
+    forecast_data = pl.concat([data[0].with_columns(pl.lit(data[1].iso_3166_2).alias("iso_3166_2")) for data in all_data])
+    current_data = pl.concat([data[1].with_columns(pl.lit(data[0].iso_3166_2).alias("iso_3166_2")) for data in all_data])
     return forecast_data, current_data
 
 @dagster.asset(

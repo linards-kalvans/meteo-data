@@ -104,6 +104,7 @@ def processed_weather_data(duckdb: DuckDBResource) -> pl.DataFrame:
                 weather_forecast.model,
                 weather_forecast.latitude,
                 weather_forecast.longitude,
+                weather_forecast.iso_3166_2,
                 DATEDIFF('hour', weather_forecast.date, weather_forecast.created_at) AS forecast_lead_hours,
                 {", ".join(diff_statements)}
             FROM weather_forecast
