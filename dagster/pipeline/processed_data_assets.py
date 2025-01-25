@@ -24,6 +24,7 @@ def duckdb_secrets(duckdb: DuckDBResource) -> None:
         conn.sql(
             sql_secrets
         )
+        conn.sql(f"SET memory_limit = '{os.getenv('MEMORY_LIMIT', '1GB')}'")
 
 @dagster.asset(
     group_name="processed_data",
