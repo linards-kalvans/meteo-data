@@ -14,5 +14,6 @@ dependencies = [
     "pandas>=2.2.3",
     "polars>=1.19.0",
     "pyarrow>=19.0.0",
+    "pydotenv>=0.0.7",
     "scipy>=1.15.1",
 ]
