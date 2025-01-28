@@ -114,5 +114,6 @@ def processed_weather_data(duckdb: DuckDBResource) -> pl.DataFrame:
                 weather_forecast.date = weather_current.date
                 AND weather_forecast.latitude = weather_current.latitude
                 AND weather_forecast.longitude = weather_current.longitude
+                AND weather_forecast.model = weather_current.model
             """
         ).df())
