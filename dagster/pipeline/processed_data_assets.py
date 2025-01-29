@@ -10,7 +10,7 @@ logger = dagster.get_dagster_logger()
     group_name="processed_data",
     metadata={"description": "Create S3 secrets in duckdb"},
 )
-def duckdb_secrets(duckdb: DuckDBResource) -> None:
+def duckdb_connect(duckdb: DuckDBResource) -> None:
     with duckdb.get_connection() as conn:
         sql_secrets = f"""
             CREATE PERSISTENT SECRET secret1 (
@@ -29,7 +29,7 @@ def duckdb_secrets(duckdb: DuckDBResource) -> None:
 
 @dagster.asset(
     group_name="processed_data",
-    deps=[duckdb_secrets],
+    deps=[duckdb_connect],
     metadata={"description": "Get last transform date from processed data"},
 )
 def last_transform_date(duckdb: DuckDBResource) -> datetime:
@@ -45,7 +45,7 @@ def last_transform_date(duckdb: DuckDBResource) -> datetime:
 
 @dagster.asset(
     group_name="processed_data",
-    deps=[duckdb_secrets],
+    deps=[duckdb_connect],
     metadata={"description": "Get weather data for the LV grid from S3"},
 )
 def weather_data_lv_grid(last_transform_date: datetime, duckdb: DuckDBResource) -> None:
@@ -94,26 +94,33 @@ def processed_weather_data(duckdb: DuckDBResource) -> pl.DataFrame:
     ]
 
     diff_statements = [
-        f"exp(abs(weather_forecast.{variable} - weather_current.{variable})) AS {variable}_performance"
+        f"weather_forecast.{variable} - weather_current.{variable} AS {variable}_diff"
         for variable in weather_variables
     ]
 
     with duckdb.get_connection() as conn:
-        return pl.from_dataframe(conn.sql(
-            f"""
-            SELECT
-                weather_forecast.date,
-                weather_forecast.model,
-                weather_forecast.latitude,
-                weather_forecast.longitude,
-                weather_forecast.iso_3166_2,
-                DATEDIFF('hour', weather_forecast.date, weather_forecast.created_at) AS forecast_lead_hours,
-                {", ".join(diff_statements)}
-            FROM weather_forecast
-            JOIN weather_current ON
-                weather_forecast.date = weather_current.date
-                AND weather_forecast.latitude = weather_current.latitude
-                AND weather_forecast.longitude = weather_current.longitude
-                AND weather_forecast.model = weather_current.model
-            """
-        ).df())
+        processed_weather_data = pl.from_dataframe(
+            conn.sql(
+                f"""
+                SELECT
+                    weather_forecast.date,
+                    weather_forecast.model,
+                    weather_forecast.latitude,
+                    weather_forecast.longitude,
+                    weather_forecast.iso_3166_2,
+                    DATEDIFF('hour', weather_forecast.date, weather_forecast.created_at) AS forecast_lead_hours,
+                    {", ".join(diff_statements)}
+                FROM weather_forecast
+                JOIN weather_current ON
+                    weather_forecast.date = weather_current.date
+                    AND weather_forecast.latitude = weather_current.latitude
+                    AND weather_forecast.longitude = weather_current.longitude
+                    AND weather_forecast.model = weather_current.model
+                """
+                ).df()
+            ).unpivot(
+                index = ["date", "model", "latitude", "longitude", "iso_3166_2"],
+                value_name = "metric",
+                variable_name = "value"
+            )
+        return processed_weather_data
