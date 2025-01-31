@@ -37,6 +37,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     ports:
       - 4000:4000
+    links:
+      - dagster-metadata:dagster-metadata
     entrypoint:
       - uv
       - run
@@ -76,6 +78,8 @@ services:
       - workspace.yaml
     ports:
       - 3000:3000
+    links:
+      - dagster-metadata:dagster-metadata
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home/
       - DAGSTER_POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
@@ -101,6 +105,8 @@ services:
     depends_on:
       dagster-webserver:
         condition: service_started
+    links:
+      - dagster-webserver:dagster-webserver
     environment:
       - FORWARD_HOST=dagster-webserver
       - FORWARD_PORT=3000
@@ -123,6 +129,8 @@ services:
       - run
       - dagster-daemon
       - run
+    links:
+      - dagster-metadata:dagster-metadata
     environment:
       - DAGSTER_POSTGRES_USER=${DAGSTER_DB_USER:-dagster}
       - DAGSTER_POSTGRES_PASSWORD=${DAGSTER_DB_PASSWORD:-dagster}
