@@ -119,8 +119,8 @@ def processed_weather_data(duckdb: DuckDBResource) -> pl.DataFrame:
                 """
                 ).df()
             ).unpivot(
-                index = ["date", "model", "latitude", "longitude", "iso_3166_2"],
-                value_name = "metric",
-                variable_name = "value"
+                index = ["date", "model", "forecast_lead_hours", "latitude", "longitude", "iso_3166_2"],
+                value_name = "value",
+                variable_name = "metric"
             )
         return processed_weather_data
